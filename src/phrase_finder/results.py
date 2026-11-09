@@ -12,6 +12,14 @@ COLUMNS = ["구절", "길이", "A 위치", "B 위치"]
 UNKNOWN_LOCATION = "(위치 불명)"
 
 
+MAX_DISPLAY_ROWS = 500  # prd.md 4장: 화면에 보여 주는 최대 건수
+
+
+def limit_for_display(table: pd.DataFrame) -> pd.DataFrame:
+    """결과가 너무 많으면 길이가 긴 순으로 상위 MAX_DISPLAY_ROWS건만 남긴다."""
+    return table.sort_values("길이", ascending=False, kind="stable").head(MAX_DISPLAY_ROWS)
+
+
 def format_location(doc: Extracted, start: int, length: int) -> str:
     """본문 글자 범위 [start, start+length)의 원문 위치.
 

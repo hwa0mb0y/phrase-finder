@@ -7,7 +7,17 @@
 from collections import defaultdict
 from dataclasses import dataclass
 
+from phrase_finder.errors import InputError
 from phrase_finder.extract import BREAK
+
+
+MIN_N, MAX_N = 3, 30
+
+
+def validate_n(n: int) -> None:
+    """화면에서 받은 최소 겹침 길이가 허용 범위(3~30)인지 확인한다."""
+    if not MIN_N <= n <= MAX_N:
+        raise InputError(f"N은 {MIN_N}에서 {MAX_N} 사이여야 합니다.")
 
 
 @dataclass(frozen=True)

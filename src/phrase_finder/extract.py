@@ -8,6 +8,8 @@ from pathlib import Path
 
 from lxml import etree
 
+from phrase_finder.errors import InputError
+
 TEI = "{http://www.tei-c.org/ns/1.0}"
 CB = "{http://www.cbeta.org/ns/1.0}"
 XML_ID = "{http://www.w3.org/XML/1998/namespace}id"
@@ -77,11 +79,21 @@ def _first_text(root: etree._Element, path: str) -> str:
 
 
 def extract(path: str | Path) -> Extracted:
-    root = etree.parse(str(path)).getroot()
-    gaiji = _gaiji_map(root)
+    """XML 파일을 읽어 본문을 추출한다. 문제가 있으면 한국어 메시지의 InputError를 낸다."""
+    path = Path(path)
+    format_error = InputError(f"CBETA P5 XML 형식이 아닌 것 같습니다: {path.name}")
+    try:
+        root = etree.parse(str(path)).getroot()
+    except etree.XMLSyntaxError as exc:
+        raise format_error from exc
+    except OSError as exc:
+        raise InputError(f"파일을 열 수 없습니다: {path}") from exc
+    if root.tag != TEI + "TEI":
+        raise format_error
     body = root.find(f".//{TEI}body")
     if body is None:
-        raise ValueError("<body>를 찾을 수 없습니다.")
+        raise format_error
+    gaiji = _gaiji_map(root)
 
     chars: list[str] = []
     positions: list[str | None] = []
@@ -128,6 +140,9 @@ def extract(path: str | Path) -> Extracted:
 
     for child in body:
         walk(child, False, False)
+
+    if not chars:
+        raise InputError(f"본문을 추출하지 못했습니다: {path.name}")
 
     return Extracted(
         doc_id=root.get(XML_ID, ""),
